@@ -14,9 +14,10 @@
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:clamp(12px,1.35vmin + 4px,20px);overflow:hidden}
 .wrap{height:100%;box-sizing:border-box;padding:1.6vmin 16px;display:grid;gap:1.4vmin;
-  grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1.15fr);
-  grid-template-rows:minmax(0,1fr) auto;
-  grid-template-areas:"clocks dial sess" "bottom bottom bottom"}
+  grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);
+  grid-template-rows:auto minmax(0,1fr);
+  grid-template-areas:"dial sess" "dial agenda"}
+.agenda{grid-area:agenda;overflow:hidden}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1.6vmin 1.8vmin;min-width:0;box-sizing:border-box}
 h2{font-family:var(--f-body);font-weight:500;font-size:.72em;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 1.1vmin}
 .tab{font-variant-numeric:tabular-nums}
@@ -41,7 +42,7 @@ h2{font-family:var(--f-body);font-weight:500;font-size:.72em;letter-spacing:.14e
 
 /* sessions */
 .sess{grid-area:sess;display:flex;flex-direction:column}
-.slist{display:flex;flex-direction:column;justify-content:space-around;flex:1;gap:1vmin}
+.slist{display:flex;flex-direction:column;gap:2.2vmin}
 .srow .top{display:flex;justify-content:space-between;align-items:baseline;gap:.6em}
 .srow .nm{font-weight:600}
 .srow .hrs{font-family:var(--f-mono);font-size:.72em;color:var(--muted)}
@@ -91,14 +92,14 @@ h2{font-family:var(--f-body);font-weight:500;font-size:.72em;letter-spacing:.14e
 .fj>div{position:absolute;inset:0}
 .fj iframe{width:100%!important;height:100%!important;border:0;display:block}
 body.has-news .news{display:flex}
-body.has-news .wrap{grid-template-columns:minmax(0,.85fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.15fr);
-  grid-template-areas:"clocks dial sess news" "bottom bottom bottom news"}
+body.has-news .wrap{grid-template-columns:minmax(0,1.5fr) minmax(0,.95fr) minmax(0,1fr);
+  grid-template-areas:"dial sess news" "dial agenda news"}
 body.has-news .city .t{font-size:1.8em}
 @media (max-width:860px), (orientation:portrait){
-  body.has-news .wrap{grid-template-columns:minmax(0,1fr);grid-template-areas:"dial" "news" "sess" "clocks" "bottom"}
+  body.has-news .wrap{grid-template-columns:minmax(0,1fr);grid-template-areas:"dial" "news" "sess" "agenda"}
   .news{height:80vh}
   body{overflow:auto}
-  .wrap{height:auto;grid-template-columns:minmax(0,1fr);grid-template-areas:"dial" "sess" "clocks" "bottom"}
+  .wrap{height:auto;grid-template-columns:minmax(0,1fr);grid-template-areas:"dial" "sess" "agenda"}
   .dial{aspect-ratio:1;max-height:90vw}
   .bottom{grid-template-columns:minmax(0,1fr)}
 }
@@ -106,18 +107,13 @@ body.has-news .city .t{font-size:1.8em}
 </style>
 
 <div class="wrap">
-  <section class="panel clocks" aria-label="Horloges mondiales">
-    <h2>Fuseaux</h2>
-    <div class="clist" id="clist"></div>
-  </section>
-
   <section class="panel dial" aria-label="Cadran 24 h des sessions">
     <div class="date" id="date"></div>
     <div class="globex" id="globex"></div>
     <svg id="dial" viewBox="0 0 400 400" role="img" aria-label="Cadran 24 heures, heure de Paris"></svg>
     <div class="legend">
       <span><i class="dot" style="background:var(--asia)"></i>Tokyo</span>
-      <span><i class="dot" style="background:var(--eu)"></i>Xetra</span>
+      <span><i class="dot" style="background:var(--eu)"></i>Europe</span>
       <span><i class="dot" style="background:var(--us)"></i>NYSE cash</span>
     </div>
   </section>
@@ -127,17 +123,11 @@ body.has-news .city .t{font-size:1.8em}
     <div class="slist" id="slist"></div>
   </section>
 
-  <div class="bottom">
-    <section class="panel tlwrap" aria-label="Repères New York">
-      <h2>Repères NY — heure de Paris en gras, heure NY en dessous</h2>
-      <div class="tl" id="tl"><div class="axis"></div><div class="open" id="tlopen"></div><div class="now" id="tlnow"></div></div>
-    </section>
-    <section class="panel" aria-label="Agenda macro US">
+    <section class="panel agenda" aria-label="Agenda macro US">
       <h2>Agenda macro US</h2>
       <div class="ev" id="ev"></div>
       <div class="foot">Stats à fort impact, heure de Paris · liste mise à jour le 7 oct. 2026</div>
     </section>
-  </div>
 <section class="panel news" aria-label="FinancialJuice" id="newsPanel">
   <div class="hd"><h2>FinancialJuice</h2>
     <div class="seg" role="group" aria-label="Vue FinancialJuice">
@@ -190,30 +180,11 @@ function dur(ms){
   return d>0?`J-${d} ${pad(h)}h${pad(m)}`:h>0?`${h}h${pad(m)}`:`${pad(m)}:${pad(ss)}`;
 }
 
-/* ---------- horloges ---------- */
-const CITIES=[
-  {n:"New York",tz:NY},{n:"Chicago",sub:"CME",tz:"America/Chicago"},{n:"Londres",tz:"Europe/London"},
-  {n:"Paris",tz:PARIS},{n:"Tokyo",tz:"Asia/Tokyo"},{n:"Hong Kong",tz:"Asia/Hong_Kong"},{n:"Sydney",tz:"Australia/Sydney"}
-];
-const clist=document.getElementById("clist");
-CITIES.forEach(c=>{const el=document.createElement("div");el.className="city";
-  el.innerHTML=`<div class="n"><b>${c.n}</b>${c.sub?` · ${c.sub}`:""}</div><div class="t tab"></div><div class="meta"><span class="o"></span><span class="w"></span></div>`;
-  c.el=el;clist.appendChild(el)});
 const WD=["dim.","lun.","mar.","mer.","jeu.","ven.","sam."];
-function renderClocks(now){
-  const po=offMin(now,PARIS);
-  CITIES.forEach(c=>{const p=parts(now,c.tz),diff=(offMin(now,c.tz)-po)/60;
-    c.el.querySelector(".t").textContent=pad(p.h)+":"+pad(p.mi);
-    c.el.querySelector(".o").textContent=diff===0?"Paris":(diff>0?"+":"−")+Math.abs(diff)+" h";
-    c.el.querySelector(".w").textContent=WD[p.wd]+(p.h>=7&&p.h<20?" · jour":" · nuit");
-  });
-}
-
 /* ---------- sessions ---------- */
 const SESS=[
   {n:"Tokyo (TSE)",tz:"Asia/Tokyo",o:[9,0],c:[15,30],col:"--asia"},
   {n:"Londres (LSE)",tz:"Europe/London",o:[8,0],c:[16,30],col:"--eu"},
-  {n:"Francfort (Xetra)",tz:"Europe/Berlin",o:[9,0],c:[17,30],col:"--eu"},
   {n:"New York (NYSE)",tz:NY,o:[9,30],c:[16,0],col:"--us"},
 ];
 function sessionWindow(s,now){
@@ -313,29 +284,12 @@ function renderDial(now){
   tNext.textContent=nx?`${nx.n.split(" :")[0].split(" +")[0]} dans ${dur(nx.d-now)}`:"";
 }
 
-/* ---------- repères NY ---------- */
-const MARKS=[[8,30,"Stats US"],[9,30,"Ouverture"],[9,45,"Fin OPR"],[11,30,"Clôt. Londres"],[12,0,"Midi"],[14,0,"FOMC"],[16,0,"Clôture cash"],[17,0,"Pause CME"]];
-const T0=8*60,T1=17*60+15,tl=document.getElementById("tl");
-const xPct=m=>((m-T0)/(T1-T0)*100);
-MARKS.forEach((mk2,i)=>{const el=document.createElement("div");el.className="mk";el.style.left=xPct(mk2[0]*60+mk2[1])+"%";
-  if(i%2)el.classList.add("up");el.innerHTML=`<i></i><div class="lb"><b></b><span>${mk2[2]}</span><em>${pad(mk2[0])}:${pad(mk2[1])} NY</em></div>`;mk2.el=el;tl.appendChild(el)});
-const op=document.getElementById("tlopen");op.style.left=xPct(570)+"%";op.style.width=(xPct(960)-xPct(570))+"%";
-function renderTL(now){
-  const p=parts(now,NY);
-  MARKS.forEach(m=>{const d=zoned(p.y,p.mo,p.d,m[0],m[1],NY);m.el.querySelector("b").textContent=hm(d);
-    m.el.classList.toggle("past",now>=d)});
-  // alterner les libellés pour éviter les chevauchements sur écran étroit
-  const narrow=tl.clientWidth<520;MARKS.forEach((m,i)=>{m.el.hidden=narrow&&[3,4].includes(i)});
-  const cur=p.h*60+p.mi+p.s/60,n=document.getElementById("tlnow");
-  if(cur>=T0&&cur<=T1&&p.wd>0&&p.wd<6){n.hidden=false;n.style.left=xPct(cur)+"%"}else n.hidden=true;
-}
-
 /* ---------- agenda ---------- */
 const evBox=document.getElementById("ev");
 const MO=["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
 function renderEvents(now){
   const pn=parts(now,PARIS);
-  const up=EVENTS.filter(e=>e.d>now-15*60e3).slice(0,5);
+  const up=EVENTS.filter(e=>e.d>now-15*60e3).slice(0,8);
   evBox.replaceChildren(...(up.length?up.map(e=>{const p=parts(e.d,PARIS),r=document.createElement("div");
     const today=p.y===pn.y&&p.mo===pn.mo&&p.d===pn.d,soon=e.d-now<30*60e3;
     r.className="evr"+(today?" today":"")+(soon?" soon":"");
@@ -350,7 +304,7 @@ function tick(){
   const now=new Date(),p=parts(now,PARIS);
   dateEl.textContent=`${JOURS[p.wd]} ${p.d} ${MO[p.mo-1]} ${p.y}`;
   const g=globex(now);gx.textContent=g.txt;gx.style.color=g.open?"var(--ok)":"var(--muted)";
-  renderClocks(now);renderSessions(now);renderDial(now);renderTL(now);
+  renderSessions(now);renderDial(now);
   if(p.s===0||!tick.done){renderEvents(now);tick.done=true}
   // atténuation nocturne 23h–7h
   dim.style.opacity=(p.h>=23||p.h<7)?.55:0;
