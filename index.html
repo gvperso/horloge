@@ -5,7 +5,7 @@
 /* Layout: écran mural paysage, une seule vue sans scroll — horloges | cadran 24h des sessions | état des marchés, puis repères NY + agenda macro en bas */
 :root{
   --bg:#0a0f16; --panel:#111924; --line:#1f2b3a; --fg:#e6edf5; --muted:#7f8ea3;
-  --asia:#e0a43a; --eu:#3fa9f5; --us:#e2574c; --ok:#3ccf8e; --warn:#f2b84b;
+  --sec:#3b8cff; --asia:#e0a43a; --eu:#3fa9f5; --us:#e2574c; --ok:#3ccf8e; --warn:#f2b84b;
   --f-display:"Saira Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -260,8 +260,31 @@ const arcsG=mk("g",{});
 const hand=mk("line",{x1:C,y1:C,x2:C,y2:C,stroke:"var(--ok)","stroke-width":2,"stroke-linecap":"round",opacity:.85});
 const handDot=mk("circle",{r:5,fill:"var(--ok)"});
 const tBig=mk("text",{x:C,y:C-6,"text-anchor":"middle",fill:"var(--fg)","font-size":72,"font-family":"var(--f-display)","font-weight":500,style:"font-variant-numeric:tabular-nums"});
-const tSec=mk("text",{x:C,y:C-6,fill:"var(--muted)","font-size":22,"font-family":"var(--f-display)"});
-const tLbl=mk("text",{x:C,y:C-76,"text-anchor":"middle",fill:"var(--muted)","font-size":11,"letter-spacing":2,"font-family":"var(--f-body)"});tLbl.textContent="PARIS";
+/* anneau des secondes façon horloge LED : chaque seconde, un point part du haut,
+   tourne en sens antihoraire et vient se poser contre les points déjà allumés */
+const SR=134,secG=mk("g",{}),secDots=[];
+for(let i=0;i<60;i++){const a=i*6*Math.PI/180;
+  secDots.push(mk("circle",{cx:(C+SR*Math.sin(a)).toFixed(2),cy:(C-SR*Math.cos(a)).toFixed(2),r:3.2,fill:"var(--line)"},secG));}
+const runner=mk("circle",{r:3.6,fill:"var(--sec)",filter:"url(#glow)",opacity:0});
+const defs=mk("defs",{});defs.innerHTML='<filter id="glow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';
+const RM=matchMedia("(prefers-reduced-motion: reduce)");
+let lastSec=-1,anim=0;
+function setLit(n){for(let i=0;i<60;i++){const on=i>=1&&i<=n;const d=secDots[i];
+  d.setAttribute("fill",on?"var(--sec)":"var(--line)");d.setAttribute("r",on?3.6:3.2);on?d.setAttribute("filter","url(#glow)"):d.removeAttribute("filter");}}
+function renderSeconds(sec){
+  if(sec===lastSec)return;const prev=lastSec;lastSec=sec;cancelAnimationFrame(anim);
+  if(sec===0){setLit(0);runner.setAttribute("opacity",0);return;}
+  setLit(sec-1);
+  if(RM.matches||prev===-1||(prev!==sec-1)){setLit(sec);runner.setAttribute("opacity",0);return;}
+  // trajet : de 360° (le haut) jusqu'à sec*6°, en sens antihoraire
+  const from=360,to=sec*6,dur=Math.min(850,180+(from-to)*2.2),t0=performance.now();
+  runner.setAttribute("opacity",1);
+  const step=t=>{let k=Math.min(1,(t-t0)/dur);const e=1-Math.pow(1-k,3),deg=from+(to-from)*e,a=deg*Math.PI/180;
+    runner.setAttribute("cx",C+SR*Math.sin(a));runner.setAttribute("cy",C-SR*Math.cos(a));
+    if(k<1)anim=requestAnimationFrame(step);else{runner.setAttribute("opacity",0);setLit(sec);}};
+  anim=requestAnimationFrame(step);
+}
+const tLbl=mk("text",{x:C,y:C-80,"text-anchor":"middle",fill:"var(--muted)","font-size":11,"letter-spacing":2,"font-family":"var(--f-body)"});tLbl.textContent="PARIS";
 const tNY=mk("text",{x:C,y:C+34,"text-anchor":"middle",fill:"var(--fg)","font-size":26,"font-family":"var(--f-display)"});
 const tNext=mk("text",{x:C,y:C+62,"text-anchor":"middle",fill:"var(--warn)","font-size":12,"font-family":"var(--f-mono)"});
 let arcsDay=-1;
@@ -284,7 +307,7 @@ function renderDial(now){
   handDot.setAttribute("cx",x);handDot.setAttribute("cy",y);
   tBig.textContent=pad(p.h)+":"+pad(p.mi);
   const w=tBig.getComputedTextLength?tBig.getComputedTextLength():150;
-  tSec.setAttribute("x",C+w/2+4);tSec.textContent=pad(p.s);
+  renderSeconds(p.s);
   tNY.textContent="New York "+hm(now,NY);
   const nx=EVENTS.find(e=>e.d>now);
   tNext.textContent=nx?`${nx.n.split(" :")[0].split(" +")[0]} dans ${dur(nx.d-now)}`:"";
@@ -332,7 +355,7 @@ function tick(){
   // atténuation nocturne 23h–7h
   dim.style.opacity=(p.h>=23||p.h<7)?.55:0;
 }
-tick();setInterval(tick,1000);
+(function loop(){tick();setTimeout(loop,1000-Date.now()%1000+15)})();
 setInterval(()=>renderEvents(new Date()),15000);
 
 /* écran allumé + plein écran (si le navigateur le permet) */
