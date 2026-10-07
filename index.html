@@ -1,0 +1,360 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><title>Horloge Salle des Marchés</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@300;500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: écran mural paysage, une seule vue sans scroll — horloges | cadran 24h des sessions | état des marchés, puis repères NY + agenda macro en bas */
+:root{
+  --bg:#0a0f16; --panel:#111924; --line:#1f2b3a; --fg:#e6edf5; --muted:#7f8ea3;
+  --asia:#e0a43a; --eu:#3fa9f5; --us:#e2574c; --ok:#3ccf8e; --warn:#f2b84b;
+  --f-display:"Saira Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:clamp(12px,1.35vmin + 4px,20px);overflow:hidden}
+.wrap{height:100%;box-sizing:border-box;padding:1.6vmin 16px;display:grid;gap:1.4vmin;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1.15fr);
+  grid-template-rows:minmax(0,1fr) auto;
+  grid-template-areas:"clocks dial sess" "bottom bottom bottom"}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1.6vmin 1.8vmin;min-width:0;box-sizing:border-box}
+h2{font-family:var(--f-body);font-weight:500;font-size:.72em;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 1.1vmin}
+.tab{font-variant-numeric:tabular-nums}
+
+/* horloges */
+.clocks{grid-area:clocks;display:flex;flex-direction:column}
+.clist{display:flex;flex-direction:column;justify-content:space-between;flex:1;gap:.4vmin}
+.city{display:grid;grid-template-columns:1fr auto;align-items:baseline;border-bottom:1px solid var(--line);padding-block:.5vmin}
+.city:last-child{border-bottom:0}
+.city .n{font-size:.9em;color:var(--muted)}
+.city .n b{color:var(--fg);font-weight:500}
+.city .t{font-family:var(--f-display);font-weight:500;font-size:2.1em;line-height:1}
+.city .meta{grid-column:1/-1;font-family:var(--f-mono);font-size:.68em;color:var(--muted);display:flex;gap:1em}
+.dot{display:inline-block;width:.55em;height:.55em;border-radius:50%;margin-right:.35em;vertical-align:.05em}
+
+/* cadran */
+.dial{grid-area:dial;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.dial svg{width:100%;height:100%;max-width:100%;max-height:100%;display:block}
+.date{position:absolute;top:1.6vmin;left:1.8vmin;font-size:.85em;color:var(--muted)}
+.globex{position:absolute;top:1.6vmin;right:1.8vmin;font-family:var(--f-mono);font-size:.7em;padding:.3em .7em;border-radius:99px;border:1px solid currentColor}
+.legend{position:absolute;bottom:1.4vmin;left:0;right:0;display:flex;justify-content:center;gap:1.4em;font-size:.7em;color:var(--muted)}
+
+/* sessions */
+.sess{grid-area:sess;display:flex;flex-direction:column}
+.slist{display:flex;flex-direction:column;justify-content:space-around;flex:1;gap:1vmin}
+.srow .top{display:flex;justify-content:space-between;align-items:baseline;gap:.6em}
+.srow .nm{font-weight:600}
+.srow .hrs{font-family:var(--f-mono);font-size:.72em;color:var(--muted)}
+.srow .st{font-family:var(--f-mono);font-size:.78em;white-space:nowrap}
+.bar{height:.45em;background:var(--line);border-radius:99px;margin-top:.5vmin;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;width:0}
+
+/* bas */
+.bottom{grid-area:bottom;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:1.4vmin}
+.tl{position:relative;height:8em;margin:0 1.6em}
+.tl .axis{position:absolute;left:0;right:0;top:50%;height:2px;background:var(--line)}
+.tl .open{position:absolute;top:50%;height:2px;background:var(--us)}
+.mk{position:absolute;top:0;bottom:0;width:0}
+.mk i{position:absolute;top:50%;left:0;transform:translate(-50%,-45%);width:.7em;height:.7em;border-radius:50%;background:var(--panel);border:2px solid var(--muted)}
+.mk.past i{background:var(--muted)}
+.mk .lb{position:absolute;left:0;top:60%;transform:translateX(-50%);text-align:center;font-size:.7em;line-height:1.25;white-space:nowrap}
+.mk.up .lb{top:auto;bottom:60%}
+.mk b{display:block;font-family:var(--f-mono);font-weight:500;color:var(--fg);font-size:1.15em}
+.mk span{display:block;color:var(--muted)}
+.mk em{font-style:normal;font-family:var(--f-mono);color:var(--muted);opacity:.7}
+.now{position:absolute;top:calc(50% - 1em);width:2px;height:2em;background:var(--ok);box-shadow:0 0 8px var(--ok);transform:translateX(-1px)}
+.tlwrap{display:flex;flex-direction:column}
+.tlwrap .tl{margin-block:auto}
+.ev{display:flex;flex-direction:column;gap:.55vmin}
+.evr{display:grid;grid-template-columns:5.6em 1fr auto;gap:.8em;align-items:baseline;font-size:.86em;padding-block:.25vmin;border-bottom:1px solid var(--line)}
+.evr:last-child{border-bottom:0}
+.evr .d{font-family:var(--f-mono);font-size:.85em;color:var(--muted)}
+.evr .cd{font-family:var(--f-mono);font-size:.85em;color:var(--muted)}
+.evr.today .d,.evr.today .cd{color:var(--warn)}
+.evr.soon{background:color-mix(in srgb,var(--us) 18%,transparent);border-radius:6px}
+.evr.soon .cd{color:var(--fg);font-weight:500}
+.tag{font-size:.75em;padding:.05em .45em;border-radius:4px;border:1px solid var(--line);color:var(--muted);margin-left:.4em}
+.foot{margin-top:.8vmin;font-size:.66em;color:var(--muted)}
+.fs{position:fixed;left:10px;bottom:8px;background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:6px;font:inherit;font-size:.65em;padding:.3em .7em;cursor:pointer;opacity:.5}
+.fs:focus-visible{outline:2px solid var(--eu)}
+.dim{position:fixed;inset:0;background:#000;pointer-events:none;opacity:0;transition:opacity 2s}
+
+/* colonne FinancialJuice (active seulement si le widget se charge, donc en auto-hébergement) */
+.news{grid-area:news;display:none;flex-direction:column;padding:1.2vmin}
+.news .hd{display:flex;justify-content:space-between;align-items:center;gap:.6em;margin-bottom:.8vmin}
+.news .hd h2{margin:0}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{background:transparent;color:var(--muted);border:0;font:inherit;font-size:.68em;padding:.3em .7em;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--line);color:var(--fg)}
+.seg button:focus-visible{outline:2px solid var(--eu)}
+.fj{flex:1;min-height:0;position:relative}
+.fj>div{position:absolute;inset:0}
+.fj iframe{width:100%!important;height:100%!important;border:0;display:block}
+body.has-news .news{display:flex}
+body.has-news .wrap{grid-template-columns:minmax(0,.85fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.15fr);
+  grid-template-areas:"clocks dial sess news" "bottom bottom bottom news"}
+body.has-news .city .t{font-size:1.8em}
+@media (max-width:860px), (orientation:portrait){
+  body.has-news .wrap{grid-template-columns:minmax(0,1fr);grid-template-areas:"dial" "news" "sess" "clocks" "bottom"}
+  .news{height:80vh}
+  body{overflow:auto}
+  .wrap{height:auto;grid-template-columns:minmax(0,1fr);grid-template-areas:"dial" "sess" "clocks" "bottom"}
+  .dial{aspect-ratio:1;max-height:90vw}
+  .bottom{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){.dim{transition:none}}
+</style>
+
+<div class="wrap">
+  <section class="panel clocks" aria-label="Horloges mondiales">
+    <h2>Fuseaux</h2>
+    <div class="clist" id="clist"></div>
+  </section>
+
+  <section class="panel dial" aria-label="Cadran 24 h des sessions">
+    <div class="date" id="date"></div>
+    <div class="globex" id="globex"></div>
+    <svg id="dial" viewBox="0 0 400 400" role="img" aria-label="Cadran 24 heures, heure de Paris"></svg>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--asia)"></i>Tokyo</span>
+      <span><i class="dot" style="background:var(--eu)"></i>Xetra</span>
+      <span><i class="dot" style="background:var(--us)"></i>NYSE cash</span>
+    </div>
+  </section>
+
+  <section class="panel sess" aria-label="Sessions">
+    <h2>Sessions <span style="text-transform:none;letter-spacing:0">(heures de Paris)</span></h2>
+    <div class="slist" id="slist"></div>
+  </section>
+
+  <div class="bottom">
+    <section class="panel tlwrap" aria-label="Repères New York">
+      <h2>Repères NY — heure de Paris en gras, heure NY en dessous</h2>
+      <div class="tl" id="tl"><div class="axis"></div><div class="open" id="tlopen"></div><div class="now" id="tlnow"></div></div>
+    </section>
+    <section class="panel" aria-label="Agenda macro US">
+      <h2>Agenda macro US</h2>
+      <div class="ev" id="ev"></div>
+      <div class="foot">Stats à fort impact, heure de Paris · liste mise à jour le 7 oct. 2026</div>
+    </section>
+  </div>
+<section class="panel news" aria-label="FinancialJuice" id="newsPanel">
+  <div class="hd"><h2>FinancialJuice</h2>
+    <div class="seg" role="group" aria-label="Vue FinancialJuice">
+      <button type="button" id="bNews" aria-pressed="true">Headlines</button>
+      <button type="button" id="bCal" aria-pressed="false">Calendrier</button>
+    </div></div>
+  <div class="fj"><div id="fj-news"></div><div id="fj-cal" hidden></div></div>
+</section>
+</div>
+<button class="fs" id="fs" type="button">Plein écran</button>
+<div class="dim" id="dim"></div>
+
+<script>
+const PARIS="Europe/Paris", NY="America/New_York";
+
+/* ---------- agenda macro (UTC) ---------- */
+const EVENTS=[
+  {t:"2026-10-07T18:00:00Z",n:"Minutes du FOMC",k:"Fed"},
+  {t:"2026-10-09T14:00:00Z",n:"Michigan, confiance prélim.",k:"Conso"},
+  {t:"2026-10-14T12:30:00Z",n:"CPI septembre",k:"Inflation"},
+  {t:"2026-10-15T12:30:00Z",n:"PPI septembre",k:"Inflation"},
+  {t:"2026-10-15T13:30:00Z",n:"Ventes au détail",k:"Conso"},
+  {t:"2026-10-28T18:00:00Z",n:"FOMC : décision de taux",k:"Fed"},
+  {t:"2026-10-28T18:30:00Z",n:"FOMC : conférence de presse",k:"Fed"},
+  {t:"2026-10-29T12:30:00Z",n:"PIB T3 + PCE core",k:"Croissance"},
+  {t:"2026-11-02T15:00:00Z",n:"ISM manufacturier",k:"Activité"},
+  {t:"2026-11-03T15:00:00Z",n:"JOLTS",k:"Emploi"},
+  {t:"2026-11-04T15:00:00Z",n:"ISM services",k:"Activité"},
+  {t:"2026-11-06T13:30:00Z",n:"NFP + chômage",k:"Emploi"},
+  {t:"2026-12-09T19:00:00Z",n:"FOMC : décision de taux",k:"Fed"},
+].map(e=>({...e,d:new Date(e.t)}));
+
+/* ---------- utilitaires fuseaux ---------- */
+const fmtCache={};
+function parts(date,tz){
+  const f=fmtCache[tz]||(fmtCache[tz]=new Intl.DateTimeFormat("en-GB",{timeZone:tz,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23",weekday:"short"}));
+  const o={};for(const p of f.formatToParts(date))o[p.type]=p.value;
+  return {y:+o.year,mo:+o.month,d:+o.day,h:+o.hour%24,mi:+o.minute,s:+o.second,wd:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(o.weekday)};
+}
+function offMin(date,tz){const p=parts(date,tz);return Math.round((Date.UTC(p.y,p.mo-1,p.d,p.h,p.mi,p.s)-date.getTime())/60000)}
+function zoned(y,mo,d,h,mi,tz){
+  const g=Date.UTC(y,mo-1,d,h,mi);let t=g-offMin(new Date(g),tz)*60000;
+  const o2=offMin(new Date(t),tz);t=g-o2*60000;return new Date(t);
+}
+function addDays(p,n){const x=new Date(Date.UTC(p.y,p.mo-1,p.d+n));return {y:x.getUTCFullYear(),mo:x.getUTCMonth()+1,d:x.getUTCDate(),wd:x.getUTCDay()}}
+const pad=n=>String(n).padStart(2,"0");
+const hm=(date,tz=PARIS)=>{const p=parts(date,tz);return pad(p.h)+":"+pad(p.mi)};
+function dur(ms){
+  const s=Math.max(0,Math.floor(ms/1000)),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),ss=s%60;
+  return d>0?`J-${d} ${pad(h)}h${pad(m)}`:h>0?`${h}h${pad(m)}`:`${pad(m)}:${pad(ss)}`;
+}
+
+/* ---------- horloges ---------- */
+const CITIES=[
+  {n:"New York",tz:NY},{n:"Chicago",sub:"CME",tz:"America/Chicago"},{n:"Londres",tz:"Europe/London"},
+  {n:"Paris",tz:PARIS},{n:"Tokyo",tz:"Asia/Tokyo"},{n:"Hong Kong",tz:"Asia/Hong_Kong"},{n:"Sydney",tz:"Australia/Sydney"}
+];
+const clist=document.getElementById("clist");
+CITIES.forEach(c=>{const el=document.createElement("div");el.className="city";
+  el.innerHTML=`<div class="n"><b>${c.n}</b>${c.sub?` · ${c.sub}`:""}</div><div class="t tab"></div><div class="meta"><span class="o"></span><span class="w"></span></div>`;
+  c.el=el;clist.appendChild(el)});
+const WD=["dim.","lun.","mar.","mer.","jeu.","ven.","sam."];
+function renderClocks(now){
+  const po=offMin(now,PARIS);
+  CITIES.forEach(c=>{const p=parts(now,c.tz),diff=(offMin(now,c.tz)-po)/60;
+    c.el.querySelector(".t").textContent=pad(p.h)+":"+pad(p.mi);
+    c.el.querySelector(".o").textContent=diff===0?"Paris":(diff>0?"+":"−")+Math.abs(diff)+" h";
+    c.el.querySelector(".w").textContent=WD[p.wd]+(p.h>=7&&p.h<20?" · jour":" · nuit");
+  });
+}
+
+/* ---------- sessions ---------- */
+const SESS=[
+  {n:"Tokyo (TSE)",tz:"Asia/Tokyo",o:[9,0],c:[15,30],col:"--asia"},
+  {n:"Londres (LSE)",tz:"Europe/London",o:[8,0],c:[16,30],col:"--eu"},
+  {n:"Francfort (Xetra)",tz:"Europe/Berlin",o:[9,0],c:[17,30],col:"--eu"},
+  {n:"New York (NYSE)",tz:NY,o:[9,30],c:[16,0],col:"--us"},
+];
+function sessionWindow(s,now){
+  // renvoie la séance en cours ou la prochaine
+  const p=parts(now,s.tz);
+  for(let i=0;i<8;i++){const q=addDays(p,i);if(q.wd===0||q.wd===6)continue;
+    const o=zoned(q.y,q.mo,q.d,s.o[0],s.o[1],s.tz),c=zoned(q.y,q.mo,q.d,s.c[0],s.c[1],s.tz);
+    if(now<c)return {o,c};}
+}
+const slist=document.getElementById("slist");
+SESS.forEach(s=>{const el=document.createElement("div");el.className="srow";
+  el.innerHTML=`<div class="top"><span class="nm"><i class="dot" style="background:var(${s.col})"></i>${s.n}</span><span class="st"></span></div><div class="hrs"></div><div class="bar"><i style="background:var(${s.col})"></i></div>`;
+  s.el=el;slist.appendChild(el)});
+function renderSessions(now){
+  SESS.forEach(s=>{const w=sessionWindow(s,now),st=s.el.querySelector(".st"),bar=s.el.querySelector(".bar i");
+    s.el.querySelector(".hrs").textContent=`${hm(w.o)} – ${hm(w.c)}`+(parts(w.o,PARIS).d!==parts(now,PARIS).d?` · ${WD[parts(w.o,PARIS).wd]}`:"");
+    if(now>=w.o){const pr=(now-w.o)/(w.c-w.o);bar.style.width=(pr*100).toFixed(1)+"%";st.textContent="Ouvert · clôture "+dur(w.c-now);st.style.color="var(--ok)"}
+    else{bar.style.width="0";st.textContent="Ouvre dans "+dur(w.o-now);st.style.color=(w.o-now<3600e3)?"var(--warn)":"var(--muted)"}
+  });
+}
+
+/* ---------- Globex ---------- */
+function globex(now){
+  const p=parts(now,NY),m=p.h*60+p.mi;
+  const at=(dd,h)=>{const q=addDays(p,dd);return zoned(q.y,q.mo,q.d,h,0,NY)};
+  if(p.wd===6)return {open:false,txt:"CME fermé · réouv. "+dur(at(1,18)-now)};
+  if(p.wd===0&&m<1080)return {open:false,txt:"CME fermé · réouv. "+dur(at(0,18)-now)};
+  if(p.wd===5&&m>=1020)return {open:false,txt:"CME fermé · réouv. "+dur(at(2,18)-now)};
+  if(m>=1020&&m<1080)return {open:false,txt:"Pause CME · reprise "+dur(at(0,18)-now)};
+  return {open:true,txt:"CME Globex ouvert"};
+}
+
+/* ---------- cadran 24h ---------- */
+const svg=document.getElementById("dial"),NS="http://www.w3.org/2000/svg",C=200;
+const mk=(t,a,parent=svg)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);parent.appendChild(e);return e};
+const ang=min=>min/1440*2*Math.PI-Math.PI/2; // 00:00 en haut
+const pt=(r,min)=>[C+r*Math.cos(ang(min)),C+r*Math.sin(ang(min))];
+function arcPath(r,a,b){if(b<a)b+=1440;const [x1,y1]=pt(r,a),[x2,y2]=pt(r,b);return `M${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${b-a>720?1:0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`}
+mk("circle",{cx:C,cy:C,r:182,fill:"none",stroke:"var(--line)","stroke-width":1});
+for(let h=0;h<24;h++){const [x1,y1]=pt(182,h*60),[x2,y2]=pt(h%6?176:170,h*60);
+  mk("line",{x1,y1,x2,y2,stroke:"var(--muted)","stroke-width":h%6?1:2});
+  if(h%3===0){const [x,y]=pt(158,h*60);const t=mk("text",{x,y,"text-anchor":"middle","dominant-baseline":"central",fill:"var(--muted)","font-size":12,"font-family":"var(--f-mono)"});t.textContent=pad(h);}}
+const arcsG=mk("g",{});
+const hand=mk("line",{x1:C,y1:C,x2:C,y2:C,stroke:"var(--ok)","stroke-width":2,"stroke-linecap":"round",opacity:.85});
+const handDot=mk("circle",{r:5,fill:"var(--ok)"});
+const tBig=mk("text",{x:C,y:C-6,"text-anchor":"middle",fill:"var(--fg)","font-size":72,"font-family":"var(--f-display)","font-weight":500,style:"font-variant-numeric:tabular-nums"});
+const tSec=mk("text",{x:C,y:C-6,fill:"var(--muted)","font-size":22,"font-family":"var(--f-display)"});
+const tLbl=mk("text",{x:C,y:C-76,"text-anchor":"middle",fill:"var(--muted)","font-size":11,"letter-spacing":2,"font-family":"var(--f-body)"});tLbl.textContent="PARIS";
+const tNY=mk("text",{x:C,y:C+34,"text-anchor":"middle",fill:"var(--fg)","font-size":26,"font-family":"var(--f-display)"});
+const tNext=mk("text",{x:C,y:C+62,"text-anchor":"middle",fill:"var(--warn)","font-size":12,"font-family":"var(--f-mono)"});
+let arcsDay=-1;
+function drawArcs(now){
+  const pd=parts(now,PARIS).d;if(pd===arcsDay)return;arcsDay=pd;arcsG.replaceChildren();
+  const rings=[["Asia/Tokyo",[9,0],[15,30],"--asia",192],["Europe/Berlin",[9,0],[17,30],"--eu",192],["America/New_York",[9,30],[16,0],"--us",185]];
+  const p=parts(now,PARIS);
+  rings.forEach(([tz,o,c,col,r],i)=>{
+    // séance du jour civil de Paris (approx. : date locale = date Paris)
+    const q=parts(zoned(p.y,p.mo,p.d,12,0,PARIS),tz);
+    const a=zoned(q.y,q.mo,q.d,o[0],o[1],tz),b=zoned(q.y,q.mo,q.d,c[0],c[1],tz);
+    const pa=parts(a,PARIS),pb=parts(b,PARIS);
+    mk("path",{d:arcPath(r,pa.h*60+pa.mi,pb.h*60+pb.mi),fill:"none",stroke:`var(${col})`,"stroke-width":7,opacity:.9},arcsG);
+  });
+}
+function renderDial(now){
+  drawArcs(now);
+  const p=parts(now,PARIS),min=p.h*60+p.mi+p.s/60,[x,y]=pt(186,min),[ix,iy]=pt(96,min);
+  hand.setAttribute("x1",ix);hand.setAttribute("y1",iy);hand.setAttribute("x2",x);hand.setAttribute("y2",y);
+  handDot.setAttribute("cx",x);handDot.setAttribute("cy",y);
+  tBig.textContent=pad(p.h)+":"+pad(p.mi);
+  const w=tBig.getComputedTextLength?tBig.getComputedTextLength():150;
+  tSec.setAttribute("x",C+w/2+4);tSec.textContent=pad(p.s);
+  tNY.textContent="New York "+hm(now,NY);
+  const nx=EVENTS.find(e=>e.d>now);
+  tNext.textContent=nx?`${nx.n.split(" :")[0].split(" +")[0]} dans ${dur(nx.d-now)}`:"";
+}
+
+/* ---------- repères NY ---------- */
+const MARKS=[[8,30,"Stats US"],[9,30,"Ouverture"],[9,45,"Fin OPR"],[11,30,"Clôt. Londres"],[12,0,"Midi"],[14,0,"FOMC"],[16,0,"Clôture cash"],[17,0,"Pause CME"]];
+const T0=8*60,T1=17*60+15,tl=document.getElementById("tl");
+const xPct=m=>((m-T0)/(T1-T0)*100);
+MARKS.forEach((mk2,i)=>{const el=document.createElement("div");el.className="mk";el.style.left=xPct(mk2[0]*60+mk2[1])+"%";
+  if(i%2)el.classList.add("up");el.innerHTML=`<i></i><div class="lb"><b></b><span>${mk2[2]}</span><em>${pad(mk2[0])}:${pad(mk2[1])} NY</em></div>`;mk2.el=el;tl.appendChild(el)});
+const op=document.getElementById("tlopen");op.style.left=xPct(570)+"%";op.style.width=(xPct(960)-xPct(570))+"%";
+function renderTL(now){
+  const p=parts(now,NY);
+  MARKS.forEach(m=>{const d=zoned(p.y,p.mo,p.d,m[0],m[1],NY);m.el.querySelector("b").textContent=hm(d);
+    m.el.classList.toggle("past",now>=d)});
+  // alterner les libellés pour éviter les chevauchements sur écran étroit
+  const narrow=tl.clientWidth<520;MARKS.forEach((m,i)=>{m.el.hidden=narrow&&[3,4].includes(i)});
+  const cur=p.h*60+p.mi+p.s/60,n=document.getElementById("tlnow");
+  if(cur>=T0&&cur<=T1&&p.wd>0&&p.wd<6){n.hidden=false;n.style.left=xPct(cur)+"%"}else n.hidden=true;
+}
+
+/* ---------- agenda ---------- */
+const evBox=document.getElementById("ev");
+const MO=["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
+function renderEvents(now){
+  const pn=parts(now,PARIS);
+  const up=EVENTS.filter(e=>e.d>now-15*60e3).slice(0,5);
+  evBox.replaceChildren(...(up.length?up.map(e=>{const p=parts(e.d,PARIS),r=document.createElement("div");
+    const today=p.y===pn.y&&p.mo===pn.mo&&p.d===pn.d,soon=e.d-now<30*60e3;
+    r.className="evr"+(today?" today":"")+(soon?" soon":"");
+    r.innerHTML=`<span class="d tab">${today?"Auj.":pad(p.d)+" "+MO[p.mo-1]} ${pad(p.h)}:${pad(p.mi)}</span><span>${e.n}<span class="tag">${e.k}</span></span><span class="cd tab">${e.d<=now?"en cours":dur(e.d-now)}</span>`;return r})
+    :[Object.assign(document.createElement("div"),{className:"foot",textContent:"Aucune stat enregistrée : liste à mettre à jour."})]));
+}
+
+/* ---------- boucle ---------- */
+const dateEl=document.getElementById("date"),gx=document.getElementById("globex"),dim=document.getElementById("dim");
+const JOURS=["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
+function tick(){
+  const now=new Date(),p=parts(now,PARIS);
+  dateEl.textContent=`${JOURS[p.wd]} ${p.d} ${MO[p.mo-1]} ${p.y}`;
+  const g=globex(now);gx.textContent=g.txt;gx.style.color=g.open?"var(--ok)":"var(--muted)";
+  renderClocks(now);renderSessions(now);renderDial(now);renderTL(now);
+  if(p.s===0||!tick.done){renderEvents(now);tick.done=true}
+  // atténuation nocturne 23h–7h
+  dim.style.opacity=(p.h>=23||p.h<7)?.55:0;
+}
+tick();setInterval(tick,1000);
+setInterval(()=>renderEvents(new Date()),15000);
+
+/* écran allumé + plein écran (si le navigateur le permet) */
+async function wake(){try{if("wakeLock" in navigator&&document.visibilityState==="visible")await navigator.wakeLock.request("screen")}catch(e){}}
+wake();document.addEventListener("visibilitychange",wake);
+document.getElementById("fs").addEventListener("click",async e=>{try{await document.documentElement.requestFullscreen();e.target.hidden=true}catch(err){e.target.textContent="Plein écran indisponible"}});
+document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement)document.getElementById("fs").hidden=false});
+
+/* ---------- FinancialJuice (widget officiel) ---------- */
+(function(){
+  const sc=document.createElement("script");
+  sc.src="https://feed.financialjuice.com/widgets/widgets.js";sc.async=true;
+  const made={};
+  function make(type,id){
+    if(made[id])return;made[id]=true;
+    try{FJWidgets.createWidget({container:id,widgetType:type,mode:"standard",width:"100%",height:"100%",backColor:"111924",fontColor:"e6edf5"});}catch(e){made[id]=false}
+  }
+  sc.onload=()=>{if(!window.FJWidgets)return;document.body.classList.add("has-news");make("news","fj-news");};
+  document.head.appendChild(sc);
+  const bN=document.getElementById("bNews"),bC=document.getElementById("bCal"),n=document.getElementById("fj-news"),c=document.getElementById("fj-cal");
+  bN.onclick=()=>{n.hidden=false;c.hidden=true;bN.setAttribute("aria-pressed","true");bC.setAttribute("aria-pressed","false")};
+  bC.onclick=()=>{make("ecocal","fj-cal");n.hidden=true;c.hidden=false;bC.setAttribute("aria-pressed","true");bN.setAttribute("aria-pressed","false")};
+})();
+</script>
+</body></html>
