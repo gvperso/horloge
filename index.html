@@ -320,6 +320,9 @@ document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement
 
 /* ---------- FinancialJuice (widget officiel) ---------- */
 (function(){
+  // Dans le navigateur de la skill Alexa, le widget ne fonctionne pas (stockage local bloqué) :
+  // on ne le charge pas, l'horloge garde toute la place.
+  try{if(new URLSearchParams(location.search).get("alexa")==="1")return}catch(e){}
   const sc=document.createElement("script");
   sc.src="https://feed.financialjuice.com/widgets/widgets.js";sc.async=true;
   const made={};
