@@ -333,5 +333,23 @@ document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement
   bN.onclick=()=>{n.hidden=false;c.hidden=true;bN.setAttribute("aria-pressed","true");bC.setAttribute("aria-pressed","false")};
   bC.onclick=()=>{make("ecocal","fj-cal");n.hidden=true;c.hidden=false;bC.setAttribute("aria-pressed","true");bN.setAttribute("aria-pressed","false")};
 })();
+/* ---------- mode skill Alexa (page ouverte avec ?alexa=1) ---------- */
+(function(){
+  let isAlexa=false;try{isAlexa=new URLSearchParams(location.search).get("alexa")==="1"}catch(e){}
+  if(!isAlexa)return;
+  document.getElementById("fs").hidden=true;
+  const sc=document.createElement("script");
+  sc.src="https://cdn.html.games.alexa.a2z.com/alexa-html/latest/alexa-html.js";
+  sc.onload=()=>{
+    if(!window.Alexa)return;
+    Alexa.create({version:"1.1"}).then(({alexa})=>{
+      try{alexa.skill.onMessage(()=>{})}catch(e){}
+      const ping=()=>{try{alexa.skill.sendMessage({type:"keepalive",t:Date.now()})}catch(e){}};
+      setInterval(ping,120000);
+    }).catch(()=>{});
+  };
+  document.head.appendChild(sc);
+})();
 </script>
+
 </body></html>
