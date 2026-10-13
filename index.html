@@ -341,15 +341,28 @@ document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement
   let isAlexa=false;try{isAlexa=new URLSearchParams(location.search).get("alexa")==="1"}catch(e){}
   if(!isAlexa)return;
   document.getElementById("fs").hidden=true;
+  // petit voyant d'état en bas à gauche, pour diagnostiquer sur l'Echo
+  const st=document.createElement("div");
+  st.style.cssText="position:fixed;left:12px;bottom:8px;font:11px var(--f-mono);color:var(--muted);opacity:.6";
+  st.textContent="Alexa : connexion…";document.body.appendChild(st);
+  const t0=Date.now();
   const sc=document.createElement("script");
   sc.src="https://cdn.html.games.alexa.a2z.com/alexa-html/latest/alexa-html.js";
+  sc.onerror=()=>{st.textContent="Alexa : bibliothèque non chargée"};
   sc.onload=()=>{
-    if(!window.Alexa)return;
-    Alexa.create({version:"1.1"}).then(({alexa})=>{
+    if(!window.Alexa){st.textContent="Alexa : bibliothèque absente";return}
+    Alexa.create({version:"1.1"}).then(({alexa,message})=>{
+      const restartAfter=((message&&message.restartAfter)||240)*1000;
+      let pings=0,last="—";
+      const show=()=>{const m=Math.floor((Date.now()-t0)/60000);
+        st.textContent=`Alexa : relié · ${pings} signaux · dernier ${last} · affiché depuis ${m} min · relance à ${Math.round(restartAfter/60000)} min`};
       try{alexa.skill.onMessage(()=>{})}catch(e){}
-      const ping=()=>{try{alexa.skill.sendMessage({type:"keepalive",t:Date.now()})}catch(e){}};
-      setInterval(ping,120000);
-    }).catch(()=>{});
+      const send=(type)=>{try{const r=alexa.skill.sendMessage({type,t:Date.now()});
+        pings++;last=hm(new Date());show();if(r&&r.catch)r.catch(()=>{st.textContent+=" · envoi refusé"})}catch(e){st.textContent="Alexa : erreur d'envoi"}};
+      show();
+      setInterval(()=>send("keepalive"),60000);
+      setTimeout(()=>send("restart"),restartAfter);
+    }).catch(e=>{st.textContent="Alexa : non disponible ("+((e&&e.code)||"erreur")+")"});
   };
   document.head.appendChild(sc);
 })();
