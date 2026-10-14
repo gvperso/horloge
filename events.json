@@ -1,0 +1,51 @@
+{
+ "updated": "2026-10-14T11:43:12Z",
+ "source": "Forex Factory (impact High, USD)",
+ "events": [
+  {
+   "t": "2026-10-14T12:30:00Z",
+   "n": "CPI m/m",
+   "k": "Inflation"
+  },
+  {
+   "t": "2026-10-14T12:30:00Z",
+   "n": "CPI y/y",
+   "k": "Inflation"
+  },
+  {
+   "t": "2026-10-14T12:30:00Z",
+   "n": "Core CPI m/m",
+   "k": "Inflation"
+  },
+  {
+   "t": "2026-10-14T12:30:00Z",
+   "n": "Core CPI y/y",
+   "k": "Inflation"
+  },
+  {
+   "t": "2026-10-15T12:30:00Z",
+   "n": "Core PPI m/m",
+   "k": "Inflation"
+  },
+  {
+   "t": "2026-10-15T12:30:00Z",
+   "n": "Core Retail Sales m/m",
+   "k": "Conso"
+  },
+  {
+   "t": "2026-10-15T12:30:00Z",
+   "n": "PPI m/m",
+   "k": "Inflation"
+  },
+  {
+   "t": "2026-10-15T12:30:00Z",
+   "n": "Retail Sales m/m",
+   "k": "Conso"
+  },
+  {
+   "t": "2026-10-16T03:30:00Z",
+   "n": "Fed Chairman Warsh Speaks",
+   "k": "Fed"
+  }
+ ]
+}
