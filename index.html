@@ -126,7 +126,7 @@ body.has-news .city .t{font-size:1.8em}
     <section class="panel agenda" aria-label="Agenda macro US">
       <h2>Agenda macro US</h2>
       <div class="ev" id="ev"></div>
-      <div class="foot">Stats à fort impact, heure de Paris · liste mise à jour le 7 oct. 2026</div>
+      <div class="foot" id="evfoot">Stats à fort impact, heure de Paris · liste intégrée du 7 oct. 2026</div>
     </section>
 <section class="panel news" aria-label="FinancialJuice" id="newsPanel">
   <div class="hd"><h2>FinancialJuice</h2>
@@ -144,7 +144,7 @@ body.has-news .city .t{font-size:1.8em}
 const PARIS="Europe/Paris", NY="America/New_York";
 
 /* ---------- agenda macro (UTC) ---------- */
-const EVENTS=[
+const STATIC_EVENTS=[
   {t:"2026-10-07T18:00:00Z",n:"Minutes du FOMC",k:"Fed"},
   {t:"2026-10-09T14:00:00Z",n:"Michigan, confiance prélim.",k:"Conso"},
   {t:"2026-10-14T12:30:00Z",n:"CPI septembre",k:"Inflation"},
@@ -287,15 +287,39 @@ function renderDial(now){
 /* ---------- agenda ---------- */
 const evBox=document.getElementById("ev");
 const MO=["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
+/* Liste mise à jour automatiquement (events.json, écrit 2×/jour par GitHub Actions),
+   fusionnée avec la liste intégrée qui sert de repli et couvre les dates lointaines (FOMC…). */
+let EVENTS=STATIC_EVENTS.slice();
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+async function loadNews(){
+  try{
+    const r=await fetch("events.json?_="+Date.now(),{cache:"no-store"});if(!r.ok)return;
+    const j=await r.json(),dyn=(j.events||[]).map(e=>({...e,d:new Date(e.t)})).filter(e=>!isNaN(e.d));
+    if(!dyn.length)return;
+    const lo=Math.min(...dyn.map(e=>+e.d))-12*3600e3,hi=Math.max(...dyn.map(e=>+e.d))+12*3600e3;
+    EVENTS=[...STATIC_EVENTS.filter(e=>+e.d<lo||+e.d>hi),...dyn].sort((a,b)=>a.d-b.d);
+    const u=new Date(j.updated),pu=parts(u,PARIS);
+    document.getElementById("evfoot").textContent=`Stats à fort impact, heure de Paris · mise à jour auto le ${pu.d} ${MO[pu.mo-1]} à ${pad(pu.h)}:${pad(pu.mi)}`;
+    renderEvents(new Date());
+  }catch(e){}
+}
 function renderEvents(now){
   const pn=parts(now,PARIS);
-  const up=EVENTS.filter(e=>e.d>now-15*60e3).slice(0,8);
+  // regroupe les annonces publiées à la même minute (ex. CPI m/m + Core CPI + CPI y/y)
+  const groups=[];
+  for(const e of EVENTS.filter(e=>e.d>now-15*60e3)){
+    const g=groups[groups.length-1];
+    if(g&&+g.d===+e.d){if(!g.names.includes(e.n))g.names.push(e.n);if(!g.tags.includes(e.k))g.tags.push(e.k)}
+    else groups.push({d:e.d,names:[e.n],tags:[e.k]});
+  }
+  const up=groups.slice(0,8);
   evBox.replaceChildren(...(up.length?up.map(e=>{const p=parts(e.d,PARIS),r=document.createElement("div");
     const today=p.y===pn.y&&p.mo===pn.mo&&p.d===pn.d,soon=e.d-now<30*60e3;
     r.className="evr"+(today?" today":"")+(soon?" soon":"");
-    r.innerHTML=`<span class="d tab">${today?"Auj.":pad(p.d)+" "+MO[p.mo-1]} ${pad(p.h)}:${pad(p.mi)}</span><span>${e.n}<span class="tag">${e.k}</span></span><span class="cd tab">${e.d<=now?"en cours":dur(e.d-now)}</span>`;return r})
-    :[Object.assign(document.createElement("div"),{className:"foot",textContent:"Aucune stat enregistrée : liste à mettre à jour."})]));
+    r.innerHTML=`<span class="d tab">${today?"Auj.":pad(p.d)+" "+MO[p.mo-1]} ${pad(p.h)}:${pad(p.mi)}</span><span>${e.names.map(esc).join(" · ")}${e.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</span><span class="cd tab">${e.d<=now?"en cours":dur(e.d-now)}</span>`;return r})
+    :[Object.assign(document.createElement("div"),{className:"foot",textContent:"Aucune stat enregistrée pour l'instant."})]));
 }
+loadNews();setInterval(loadNews,30*60e3);
 
 /* ---------- boucle ---------- */
 const dateEl=document.getElementById("date"),gx=document.getElementById("globex"),dim=document.getElementById("dim");
