@@ -318,6 +318,31 @@ wake();document.addEventListener("visibilitychange",wake);
 document.getElementById("fs").addEventListener("click",async e=>{try{await document.documentElement.requestFullscreen();e.target.hidden=true}catch(err){e.target.textContent="Plein écran indisponible"}});
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement)document.getElementById("fs").hidden=false});
 
+/* ---------- maintien à l'écran par un son quasi inaudible ----------
+   Un média en cours de lecture empêche normalement l'Echo de revenir à l'accueil.
+   On joue en boucle 2 s de souffle très faible (inaudible), généré ici même. */
+const keepAudio=(function(){
+  const sr=8000,n=sr*2,buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
+  const w=(o,str)=>{for(let i=0;i<str.length;i++)v.setUint8(o+i,str.charCodeAt(i))};
+  w(0,"RIFF");v.setUint32(4,36+n*2,true);w(8,"WAVE");w(12,"fmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);
+  v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);
+  w(36,"data");v.setUint32(40,n*2,true);
+  for(let i=0;i<n;i++)v.setInt16(44+i*2,Math.round((Math.random()*2-1)*3),true);
+  const a=new Audio(URL.createObjectURL(new Blob([buf],{type:"audio/wav"})));a.loop=true;a.volume=1;
+  const lbl=document.createElement("div");
+  lbl.style.cssText="position:fixed;right:12px;bottom:8px;font:11px var(--f-mono);color:var(--muted);opacity:.55;cursor:pointer";
+  document.body.appendChild(lbl);
+  const set=t=>{lbl.textContent=t};
+  const start=()=>a.play().then(()=>set("maintien écran : actif")).catch(()=>set("maintien écran : touchez l'écran pour activer"));
+  a.addEventListener("pause",()=>set("maintien écran : en pause"));
+  a.addEventListener("playing",()=>set("maintien écran : actif"));
+  const onTap=()=>{if(a.paused)start()};
+  document.addEventListener("pointerdown",onTap);document.addEventListener("touchstart",onTap,{passive:true});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&a.paused)start()});
+  start();
+  return {start,isOn:()=>!a.paused};
+})();
+
 /* ---------- FinancialJuice (widget officiel) ---------- */
 (function(){
   // Dans le navigateur de la skill Alexa, le widget ne fonctionne pas (stockage local bloqué) :
@@ -352,16 +377,14 @@ document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement
   sc.onload=()=>{
     if(!window.Alexa){st.textContent="Alexa : bibliothèque absente";return}
     Alexa.create({version:"1.1"}).then(({alexa,message})=>{
-      const restartAfter=((message&&message.restartAfter)||240)*1000;
       let pings=0,last="—";
       const show=()=>{const m=Math.floor((Date.now()-t0)/60000);
-        st.textContent=`Alexa : relié · ${pings} signaux · dernier ${last} · affiché depuis ${m} min · relance à ${Math.round(restartAfter/60000)} min`};
+        st.textContent=`Alexa : relié · ${pings} signaux · dernier ${last} · affiché depuis ${m} min`};
       try{alexa.skill.onMessage(()=>{})}catch(e){}
       const send=(type)=>{try{const r=alexa.skill.sendMessage({type,t:Date.now()});
         pings++;last=hm(new Date());show();if(r&&r.catch)r.catch(()=>{st.textContent+=" · envoi refusé"})}catch(e){st.textContent="Alexa : erreur d'envoi"}};
       show();
       setInterval(()=>send("keepalive"),60000);
-      setTimeout(()=>send("restart"),restartAfter);
     }).catch(e=>{st.textContent="Alexa : non disponible ("+((e&&e.code)||"erreur")+")"});
   };
   document.head.appendChild(sc);
