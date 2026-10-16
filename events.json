@@ -1,27 +1,7 @@
 {
- "updated": "2026-10-14T11:43:12Z",
+ "updated": "2026-10-16T12:52:21Z",
  "source": "Forex Factory (impact High, USD)",
  "events": [
-  {
-   "t": "2026-10-14T12:30:00Z",
-   "n": "CPI m/m",
-   "k": "Inflation"
-  },
-  {
-   "t": "2026-10-14T12:30:00Z",
-   "n": "CPI y/y",
-   "k": "Inflation"
-  },
-  {
-   "t": "2026-10-14T12:30:00Z",
-   "n": "Core CPI m/m",
-   "k": "Inflation"
-  },
-  {
-   "t": "2026-10-14T12:30:00Z",
-   "n": "Core CPI y/y",
-   "k": "Inflation"
-  },
   {
    "t": "2026-10-15T12:30:00Z",
    "n": "Core PPI m/m",
