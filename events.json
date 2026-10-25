@@ -1,5 +1,31 @@
 {
- "updated": "2026-10-18T05:37:10Z",
+ "updated": "2026-10-25T05:37:59Z",
  "source": "Forex Factory (impact High, USD)",
- "events": []
+ "events": [
+  {
+   "t": "2026-10-28T18:00:00Z",
+   "n": "FOMC Statement",
+   "k": "Fed"
+  },
+  {
+   "t": "2026-10-28T18:00:00Z",
+   "n": "Federal Funds Rate",
+   "k": "Fed"
+  },
+  {
+   "t": "2026-10-28T18:30:00Z",
+   "n": "FOMC Press Conference",
+   "k": "Fed"
+  },
+  {
+   "t": "2026-10-29T12:30:00Z",
+   "n": "Advance GDP q/q",
+   "k": "Croissance"
+  },
+  {
+   "t": "2026-10-29T12:30:00Z",
+   "n": "Core PCE Price Index m/m",
+   "k": "Inflation"
+  }
+ ]
 }
