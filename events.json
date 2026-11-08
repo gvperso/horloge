@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-06T06:03:22Z",
+ "updated": "2026-11-08T11:54:46Z",
  "source": "Forex Factory (impact High, USD)",
  "events": [
   {
@@ -16,6 +16,26 @@
    "t": "2026-11-06T13:30:00Z",
    "n": "Unemployment Rate",
    "k": "Emploi"
+  },
+  {
+   "t": "2026-11-10T13:30:00Z",
+   "n": "CPI m/m",
+   "k": "Inflation"
+  },
+  {
+   "t": "2026-11-10T13:30:00Z",
+   "n": "Core CPI m/m",
+   "k": "Inflation"
+  },
+  {
+   "t": "2026-11-13T13:30:00Z",
+   "n": "Core PPI m/m",
+   "k": "Inflation"
+  },
+  {
+   "t": "2026-11-13T13:30:00Z",
+   "n": "PPI m/m",
+   "k": "Inflation"
   }
  ]
 }
