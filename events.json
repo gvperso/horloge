@@ -1,22 +1,7 @@
 {
- "updated": "2026-11-08T11:54:46Z",
+ "updated": "2026-11-08T17:55:22Z",
  "source": "Forex Factory (impact High, USD)",
  "events": [
-  {
-   "t": "2026-11-06T13:30:00Z",
-   "n": "Average Hourly Earnings m/m",
-   "k": "Macro"
-  },
-  {
-   "t": "2026-11-06T13:30:00Z",
-   "n": "Non-Farm Employment Change",
-   "k": "Emploi"
-  },
-  {
-   "t": "2026-11-06T13:30:00Z",
-   "n": "Unemployment Rate",
-   "k": "Emploi"
-  },
   {
    "t": "2026-11-10T13:30:00Z",
    "n": "CPI m/m",
