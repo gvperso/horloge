@@ -1,16 +1,5 @@
 {
- "updated": "2026-11-22T13:18:20Z",
+ "updated": "2026-11-27T15:01:09Z",
  "source": "Forex Factory (impact High, USD)",
- "events": [
-  {
-   "t": "2026-11-25T13:30:00Z",
-   "n": "Core PCE Price Index m/m",
-   "k": "Inflation"
-  },
-  {
-   "t": "2026-11-25T13:30:00Z",
-   "n": "Prelim GDP q/q",
-   "k": "Croissance"
-  }
- ]
+ "events": []
 }
